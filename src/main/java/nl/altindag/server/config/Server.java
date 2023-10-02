@@ -3,9 +3,9 @@ package nl.altindag.server.config;
 
 import io.quarkus.vertx.http.HttpServerOptionsCustomizer;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.TrustOptions;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.security.KeyPair;
@@ -40,6 +40,7 @@ public class Server implements HttpServerOptionsCustomizer {
 
             SSLFactory sslFactory = SSLFactory.builder()
                     .withSwappableTrustMaterial()
+                    .withIdentityMaterial(privKey.getPrivate(), null, certificate)
                     .withTrustMaterial(certificate)
                     .build();
 
@@ -56,14 +57,12 @@ public class Server implements HttpServerOptionsCustomizer {
              });
              
              // Config Quarkus Server
-            
-             PemKeyCertOptions pemKeyCert = new PemKeyCertOptions().setCertValue(Buffer.buffer(Utils.x509CertificateToPem(  certificate ) ))
-                                                                   .setKeyValue( Buffer.buffer( Utils.getPrivateKeyAsString( privKey)   ) ); 
 
-             options.setSsl(true)
+            options.setSsl(true)
                     .setUseAlpn(true)
                     .setPort(8443)
-                    .setPemKeyCertOptions( pemKeyCert ) ;
+                    .setKeyCertOptions(sslFactory.getKeyManager().map(KeyCertOptions::wrap).orElseThrow())
+                    .setTrustOptions(sslFactory.getTrustManager().map(TrustOptions::wrap).orElseThrow());
              
             System.out.println("Quarkus Started... ") ;
             
