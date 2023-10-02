@@ -11,13 +11,10 @@ import java.io.File;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.logging.Level;
-import javax.net.ssl.X509ExtendedTrustManager;
 import static nl.altindag.server.config.Utils.createAndPersisteCerificate;
 import nl.altindag.server.service.FileBasedSslUpdateService;
 import nl.altindag.ssl.SSLFactory;
-import nl.altindag.ssl.util.TrustManagerUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -40,15 +37,11 @@ public class Server implements HttpServerOptionsCustomizer {
              Pair<X509Certificate, KeyPair> createCerificate = createAndPersisteCerificate(CERT_FILE, CERT_KEY_FILE);
              X509Certificate certificate = createCerificate.getKey();
              KeyPair         privKey     = createCerificate.getValue();
-         
-             X509ExtendedTrustManager createCertificateCapturingTrustManager = TrustManagerUtils.createTrustManager(List.of(certificate) );
 
-             X509ExtendedTrustManager createSwappableTrustManager = TrustManagerUtils.createSwappableTrustManager(createCertificateCapturingTrustManager);
-
-             SSLFactory sslFactory = SSLFactory.builder()
-                                               .withSwappableTrustMaterial()
-                                               .withTrustMaterial(createSwappableTrustManager)
-                                               .build();
+            SSLFactory sslFactory = SSLFactory.builder()
+                    .withSwappableTrustMaterial()
+                    .withTrustMaterial(certificate)
+                    .build();
 
              var sslUpdateService = new FileBasedSslUpdateService(sslFactory, new File(CERT_FILE), new File(CERT_KEY_FILE));
 

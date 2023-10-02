@@ -46,15 +46,11 @@ public final class FileBasedSslUpdateService {
                 if (identityUpdated && trustStoreUpdated) {
                     
                     LOGGER.info("Keystore files have been changed. Trying to read the file content and preparing to update the ssl material");
-                    // X509ExtendedTrustManager createCertificateCapturingTrustManager = TrustManagerUtils.createCertificateCapturingTrustManager(List.of(cert) );
-                    // X509ExtendedTrustManager createSwappableTrustManager = TrustManagerUtils.createTrustManager( List.of( cert));
-
                     SSLFactory newUpdatedSslFactory = SSLFactory.builder()
-                                                                .withInflatableTrustMaterial()
-                                                                .withTrustMaterial( cert)
-                                                                .build();
+                            .withTrustMaterial(cert)
+                            .build();
                     
-                    SSLFactoryUtils.reload(baseSslFactory, newUpdatedSslFactory, true) ;
+                    SSLFactoryUtils.reload(baseSslFactory, newUpdatedSslFactory);
 
                     lastModifiedTimeIdentityStore = ZonedDateTime.ofInstant(identityAttributes.lastModifiedTime().toInstant(), ZoneOffset.UTC  ) ;
                     lastModifiedTimeTrustStore    = ZonedDateTime.ofInstant(trustStoreAttributes.lastModifiedTime().toInstant(), ZoneOffset.UTC) ;
