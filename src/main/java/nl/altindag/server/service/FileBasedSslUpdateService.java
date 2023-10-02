@@ -4,12 +4,14 @@ package nl.altindag.server.service;
 import java.io.File;
 import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.util.SSLFactoryUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -34,7 +36,7 @@ public final class FileBasedSslUpdateService {
         LOGGER.info("Started listening for any changes on the keystore and truststore files...");
     }
 
-    public void updateSslMaterial(  X509Certificate cert ) {
+    public void updateSslMaterial(Pair<X509Certificate, KeyPair> identity ) {
         try {
             if ( certFile.exists() && certKeyFile.exists() ) {
                 BasicFileAttributes identityAttributes = Files.readAttributes( certFile.toPath(), BasicFileAttributes.class);
@@ -47,7 +49,7 @@ public final class FileBasedSslUpdateService {
                     
                     LOGGER.info("Keystore files have been changed. Trying to read the file content and preparing to update the ssl material");
                     SSLFactory newUpdatedSslFactory = SSLFactory.builder()
-                            .withTrustMaterial(cert)
+                            .withIdentityMaterial(identity.getValue().getPrivate(), null, identity.getKey())
                             .build();
                     
                     SSLFactoryUtils.reload(baseSslFactory, newUpdatedSslFactory);

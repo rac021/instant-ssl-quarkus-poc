@@ -37,23 +37,21 @@ public class Server implements HttpServerOptionsCustomizer {
       
         try {
           
-             Pair<X509Certificate, KeyPair> createCerificate = createAndPersisteCerificate(CERT_FILE, CERT_KEY_FILE);
-             X509Certificate certificate = createCerificate.getKey();
-             KeyPair         privKey     = createCerificate.getValue();
+             Pair<X509Certificate, KeyPair> identity = createAndPersisteCerificate(CERT_FILE, CERT_KEY_FILE);
 
             SSLFactory sslFactory = SSLFactory.builder()
-                    .withSwappableTrustMaterial()
-                    .withIdentityMaterial(privKey.getPrivate(), null, certificate)
-                    .withTrustMaterial(certificate)
+                    .withSwappableIdentityMaterial()
+                    .withIdentityMaterial(identity.getValue().getPrivate(), null, identity.getKey())
+                    .withTrustMaterial(identity.getKey())
                     .build();
 
              var sslUpdateService = new FileBasedSslUpdateService(sslFactory, new File(CERT_FILE), new File(CERT_KEY_FILE));
 
-             // Create Self-SIgned Cert each 10s
-             vertx.setPeriodic( 10000, ( Long id) ->  {
+             // Create Self-SIgned Cert each 30s
+             vertx.setPeriodic( 30000, ( Long id) ->  {
                    try {
-                           Pair<X509Certificate, KeyPair> certPair = createAndPersisteCerificate(CERT_FILE, CERT_KEY_FILE);
-                           sslUpdateService.updateSslMaterial( certPair.getKey() ) ;
+                       Pair<X509Certificate, KeyPair> anotherIdentity = createAndPersisteCerificate(CERT_FILE, CERT_KEY_FILE);
+                       sslUpdateService.updateSslMaterial(anotherIdentity) ;
                     } catch ( Exception ex) {
                           throw new RuntimeException(ex) ;
                     }
