@@ -3,6 +3,7 @@ package nl.altindag.server.config;
 
 import io.quarkus.vertx.http.HttpServerOptionsCustomizer;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.TrustOptions;
@@ -28,8 +29,10 @@ public class Server implements HttpServerOptionsCustomizer {
 
     @Override
     public void customizeHttpsServer(HttpServerOptions options) {
-        
-        Vertx vertx = Vertx.vertx() ;
+        VertxOptions vertxOptions = new VertxOptions();
+        vertxOptions.setBlockedThreadCheckInterval(1000*60*60);
+        Vertx vertx = Vertx.vertx(vertxOptions) ;
+
         Security.addProvider(new BouncyCastleProvider()) ;
       
         try {
