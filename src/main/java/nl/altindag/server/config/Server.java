@@ -8,19 +8,21 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.TrustOptions;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.io.File;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import static nl.altindag.server.config.Utils.createAndPersisteCerificate;
-import nl.altindag.server.service.FileBasedSslUpdateService;
 import nl.altindag.ssl.SSLFactory;
+import nl.altindag.ssl.util.SSLFactoryUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class Server implements HttpServerOptionsCustomizer {
+
+    private static final Logger LOGGER = Logger.getLogger(Server.class);
 
     public Server() { }
 
@@ -45,13 +47,19 @@ public class Server implements HttpServerOptionsCustomizer {
                     .withTrustMaterial(identity.getKey())
                     .build();
 
-             var sslUpdateService = new FileBasedSslUpdateService(sslFactory, new File(CERT_FILE), new File(CERT_KEY_FILE));
-
              // Create Self-SIgned Cert each 30s
              vertx.setPeriodic( 30000, ( Long id) ->  {
                    try {
+                       LOGGER.info("Started updating ssl material") ;
                        Pair<X509Certificate, KeyPair> anotherIdentity = createAndPersisteCerificate(CERT_FILE, CERT_KEY_FILE);
-                       sslUpdateService.updateSslMaterial(anotherIdentity) ;
+
+                       SSLFactory updatedSslFactory = SSLFactory.builder()
+                               .withIdentityMaterial(anotherIdentity.getValue().getPrivate(), null, anotherIdentity.getKey())
+                               .build();
+
+                       SSLFactoryUtils.reload(sslFactory, updatedSslFactory);
+
+                       LOGGER.info("Updating ssl material finished") ;
                     } catch ( Exception ex) {
                           throw new RuntimeException(ex) ;
                     }
